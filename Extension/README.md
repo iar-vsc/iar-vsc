@@ -86,6 +86,10 @@ Those values get overwritten by the extension when invalid values are defined or
 
 ## Release Notes
 
+### 1.0.1
+
+* Fixes #38: IAR:Select Configuration does not autopopulate with options
+
 ### 1.0.0
 
 * Add __root to default defines
