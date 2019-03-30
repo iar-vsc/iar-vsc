@@ -61,7 +61,7 @@ export namespace Settings {
     }
 
     export function setWorkbench(path: Fs.PathLike): void {
-        Vscode.workspace.getConfiguration(section).update(Field.Workbench, path.toString());
+        Vscode.workspace.getConfiguration(section).update(Field.Workbench, path.toString(), Vscode.ConfigurationTarget.Global);
 
         fireChange(Field.Workbench, path.toString());
     }
@@ -71,7 +71,7 @@ export namespace Settings {
     }
 
     export function setCompiler(path: Fs.PathLike): void {
-        Vscode.workspace.getConfiguration(section).update(Field.Compiler, path.toString());
+        Vscode.workspace.getConfiguration(section).update(Field.Compiler, path.toString(), Vscode.ConfigurationTarget.Global);
 
         fireChange(Field.Compiler, path.toString());
     }
