@@ -18,6 +18,7 @@ export interface Config {
     readonly defines: Define[];
     readonly includes: IncludePath[];
     readonly preIncludes: PreIncludePath[];
+    readonly includeCmsis: boolean;
 }
 
 class XmlConfig implements Config {
@@ -26,18 +27,23 @@ class XmlConfig implements Config {
     readonly defines: Define[];
     readonly includes: IncludePath[];
     readonly preIncludes: PreIncludePath[];
+    readonly includeCmsis: boolean;
 
     constructor(xmlConfigElement: XmlNode, ewpPath: Fs.PathLike) {
         this.xml = xmlConfigElement;
 
-        if (this.xml.tagName !== 'configuration') {
-            throw new Error("Expected an xml element 'configuration' instead of '" + this.xml.tagName + "'");
+        if (this.xml.tagName !== "configuration") {
+            throw new Error(
+                "Expected an xml element 'configuration' instead of '" +
+                    this.xml.tagName +
+                    "'"
+            );
         }
 
         const projectRoot = Path.parse(ewpPath.toString()).dir;
 
         this.defines = Define.fromXml(xmlConfigElement);
-        this.includes = IncludePath.fromXmlData(xmlConfigElement, projectRoot);
+        [this.includes, this.includeCmsis] = IncludePath.fromXmlData(xmlConfigElement, projectRoot);
         this.preIncludes = PreIncludePath.fromXml(xmlConfigElement, projectRoot);
     }
 

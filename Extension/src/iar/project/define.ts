@@ -100,6 +100,19 @@ export namespace Define {
         return [];
     }
 
+    export function fromSettings(settingsDefine: string): Define {
+        let components = settingsDefine.split("=", 2);
+
+        if (components.length != 2) {
+            throw new Error("Invalid define format!")
+        }
+
+        return {
+            identifier: components[0],
+            value: components[1].length == 0 ? undefined : components[1],
+        };
+    }
+
     export function fromSourceFile(path: Fs.PathLike): Define[] {
         let buf = Fs.readFileSync(path.toString());
 

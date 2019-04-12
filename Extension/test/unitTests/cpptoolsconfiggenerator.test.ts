@@ -12,15 +12,41 @@ import { Define } from "../../src/iar/project/define";
 import { IncludePath } from "../../src/iar/project/includepath";
 import { PreIncludePath } from "../../src/iar/project/preincludepath";
 import { Compiler } from "../../src/iar/tools/compiler";
+import { Settings } from "../../src/extension/settings";
 
 suite("CppToolsConfigGenerator", () => {
+    let writeFileStub: Sinon.default.SinonStub;
+
+    setup(() => {
+        writeFileStub = Sinon.default.stub(Fs, "writeFileSync");
+    })
+    teardown(() => {
+        writeFileStub.restore();
+    });
+
     test("Verify fixed path", () => {
         const outPath = "cpptools.json";
-        let config = createDefaultConfig();
+        let config = createConfig("Default Config", false);
         let compiler = createDefaultCompiler();
         let jsonString: string = "";
 
-        Sinon.default.stub(Fs, "writeFileSync").callsFake((...args: any[]) => {
+        writeFileStub.callsFake((...args: any[]) => {
+            jsonString = args[1];
+        });
+
+        CppToolsConfigGenerator.generate(config, compiler, outPath);
+
+        let json = Jsonc.parse(jsonString);
+        verifyConfig(json, config, compiler);
+    });
+
+    test("Verify fixed path with CMSIS", () => {
+        const outPath = "cpptools.json";
+        let config = createConfig("Default with CMSIS", true);
+        let compiler = createDefaultCompiler();
+        let jsonString: string = "";
+
+        writeFileStub.callsFake((...args: any[]) => {
             jsonString = args[1];
         });
 
@@ -47,7 +73,14 @@ suite("CppToolsConfigGenerator", () => {
         Assert.notEqual(iarConfiguration, undefined);
 
         let defines = config.defines.concat(compiler.defines);
+        defines = defines.concat(Settings.getDefines().map(d => Define.fromSettings(d)));
+
         let includePaths = config.includes.concat(compiler.includePaths);
+
+        if (config.includeCmsis) {
+            includePaths.push(compiler.cmsisIncludePath);
+        }
+
         let preincludes = config.preIncludes;
 
         Assert.equal(iarConfiguration["defines"].length, defines.length);
@@ -69,8 +102,7 @@ suite("CppToolsConfigGenerator", () => {
         Assert.equal(arraysContainSameElements(preincludePathEqual, preincludes, iarConfiguration["forcedInclude"]), true);
     }
 
-    function createDefaultConfig(): Config {
-        let name = "Default Config";
+    function createConfig(name: string, includeCmsis: boolean): Config {
         let defines: Define[] = [
             { identifier: "DEBUG", value: undefined },
             { identifier: "Simulate", value: "1" }
@@ -88,7 +120,8 @@ suite("CppToolsConfigGenerator", () => {
             name: name,
             defines: defines,
             includes: includePaths,
-            preIncludes: preIncludePaths
+            preIncludes: preIncludePaths,
+            includeCmsis: includeCmsis,
         };
     }
 
@@ -106,14 +139,16 @@ suite("CppToolsConfigGenerator", () => {
             name: "cc",
             path: path,
             defines: defines,
-            includePaths: includePaths
+            includePaths: includePaths,
+            cmsisIncludePath:
+                { path: "C:\\MyCompiler\\CMSIS\\Include", absolutePath: "C:\\MyCompiler\\CMSIS\\Include", workspacePath: "..\\MyCompiler\\CMSIS\\Include" },
         };
     }
 
     /**
      * This function compares multiple arrays to check if they ALL contain the
      * same elements. This does not mean the order of the elements are the same!
-     * 
+     *
      * @param fnEqual A function that can check equality of each item
      * @param arrays The arrays to compare
      */

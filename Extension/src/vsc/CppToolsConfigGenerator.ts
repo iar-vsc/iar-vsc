@@ -63,7 +63,7 @@ export namespace CppToolsConfigGenerator {
         return array;
     }
 
-    function toIncludePathArray(includes: IncludePath[], absolutePath: boolean = false): string[] {
+    function toIncludePathArray(includes: IncludePath[], absolutePath: boolean): string[] {
         let array: string[] = [];
 
         includes.forEach(item => {
@@ -139,25 +139,31 @@ export namespace CppToolsConfigGenerator {
         let obj: any = {};
 
         let defines: string[] = [];
-        let includepaths: string[] = [];
+        let includepaths: IncludePath[] = [];
         let preincludes: string[] = [];
 
         if (config) {
             defines = defines.concat(toDefineArray(config.defines));
-            includepaths = includepaths.concat(toIncludePathArray(config.includes));
+            includepaths = includepaths.concat(config.includes);
             preincludes = preincludes.concat(toPreIncludePathArray(config.preIncludes));
         }
 
         defines = defines.concat(Settings.getDefines());
 
+        let includepathStrings = toIncludePathArray(includepaths, false);
+
         if (compiler) {
             defines = defines.concat(toDefineArray(compiler.defines));
-            includepaths = includepaths.concat(toIncludePathArray(compiler.includePaths, true));
+            includepathStrings = includepathStrings.concat(toIncludePathArray(compiler.includePaths, true));
+
+            if (config && config.includeCmsis) {
+                includepathStrings.push(compiler.cmsisIncludePath.absolutePath.toString());
+            }
         }
 
         obj["name"] = "IAR";
         obj["defines"] = defines;
-        obj["includePath"] = includepaths;
+        obj["includePath"] = includepathStrings;
         obj["forcedInclude"] = preincludes;
 
         obj["cStandard"] = Settings.getCStandard();

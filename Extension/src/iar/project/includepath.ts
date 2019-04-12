@@ -88,7 +88,7 @@ export class StringIncludePath implements IncludePath {
 }
 
 export namespace IncludePath {
-    export function fromXmlData(xml: XmlNode, projectPath: Fs.PathLike): IncludePath[] {
+    export function fromXmlData(xml: XmlNode, projectPath: Fs.PathLike): [IncludePath[], boolean] {
         let settings = IarXml.findSettingsFromConfig(xml, '/ICC.*/');
 
         if (settings) {
@@ -106,11 +106,22 @@ export namespace IncludePath {
                     }
                 });
 
-                return includePaths;
+                let cmsisIncluded = false;
+                let iccCmsis = IarXml.findOptionFromSettings(settings, '/IccCmsis/');
+
+                if (iccCmsis) {
+                    let state = iccCmsis.getFirstChildByName('state');
+
+                    if (state !== undefined && state.text === "1") {
+                        cmsisIncluded = true;
+                    }
+                }
+
+                return [includePaths, cmsisIncluded];
             }
         }
 
-        return [];
+        return [[], false];
     }
 
     export function fromCompilerOutput(output: string): IncludePath[] {
