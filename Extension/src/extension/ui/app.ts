@@ -333,10 +333,6 @@ class Application {
         model.addOnInvalidateHandler(() => {
             this.selectCurrentCompiler();
         });
-
-        model.addOnSelectedHandler(() => {
-            this.generateOutput();
-        });
     }
 
     private addProjectModelListeners(): void {
@@ -357,10 +353,6 @@ class Application {
 
         model.addOnInvalidateHandler(() => {
             this.selectCurrenConfiguration();
-        });
-
-        model.addOnSelectedHandler(() => {
-            this.generateOutput();
         });
     }
 }
