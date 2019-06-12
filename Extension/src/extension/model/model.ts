@@ -5,6 +5,7 @@
 'use strict';
 
 import { Handler } from "../../utils/handler";
+import { Logging } from "../../utils/logging";
 
 type selectHandler<T> = (model: ListInputModel<T>, selected?: T) => void;
 type invalidateHandler<T> = (model: ListInputModel<T>) => void;
@@ -71,6 +72,8 @@ export abstract class ListInputModelBase<T> implements ListInputModel<T> {
 
     select(index: number): boolean {
         if (this.selectedIndex !== index) {
+            Logging.getInstance().debug("Selecting new index: {0}", index);
+
             this.selectedIndex_ = index;
             this.fireSelectionChanged(this.data[this.selectedIndex_]);
 
@@ -89,6 +92,7 @@ export abstract class ListInputModelBase<T> implements ListInputModel<T> {
     }
 
     protected fireSelectionChanged(item?: T): void {
+        Logging.getInstance().debug("Notifying listeners for new selected item: {0}", typeof (item));
         this.selectHandlers.forEach(handler => {
             handler.call(this, item);
         });

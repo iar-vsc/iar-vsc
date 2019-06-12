@@ -9,6 +9,7 @@ import { CommandBase } from "./command";
 import { CompilerListModel } from "../model/selectcompiler";
 import { ConfigurationListModel } from "../model/selectconfiguration";
 import { CppToolsConfigGenerator } from "../../vsc/CppToolsConfigGenerator";
+import { Logging } from "../../utils/logging";
 
 class GenerateCppToolsConfCommand extends CommandBase {
     private compilerModel: CompilerListModel;
@@ -28,9 +29,15 @@ class GenerateCppToolsConfCommand extends CommandBase {
         Vscode.window.showInformationMessage("Generating cpptools config file");
 
         CppToolsConfigGenerator.generate(this.configModel.selected, this.compilerModel.selected).then((result) => {
+            Logging.getInstance().info("Generator finished.");
+
             if (result) {
+                Logging.getInstance().warning("Error during generation: {0}", result.message);
                 Vscode.window.showErrorMessage(result.message);
             }
+        }).catch(() => {
+            Logging.getInstance().warning("Generation promise failed.");
+            Vscode.window.showErrorMessage("Failed to generate configuration.");
         });
     }
 }
