@@ -135,7 +135,7 @@ export class DynamicConfigGenerator {
 
     // parses output from builder to find the calls to a compiler (eg iccarm) and what arguments it uses
     private async findCompilerInvocations(builderOutput: Readable): Promise<string[][]> {
-        return new Promise((resolve, _reject) => {
+        return new Promise<string[][]>((resolve, _reject) => {
             const compilerInvocations: string[][] = [];
             const lineReader = readline.createInterface({
                 input: builderOutput,
