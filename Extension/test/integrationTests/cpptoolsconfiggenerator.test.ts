@@ -17,6 +17,7 @@ import { Settings } from "../../src/extension/settings";
 import { Compiler } from "../../src/iar/tools/compiler";
 import { Platform } from "../../src/iar/tools/platform";
 import { DynamicConfigGenerator } from "../../src/extension/configprovider/dynamicconfiggenerator";
+import { unlinkSync } from "fs";
 
 const TEST_PROJECT_FILE = path.resolve(__dirname, "../../../test/ewpFiles/test_project.ewp");
 const TEST_SOURCE_FILE = path.resolve(__dirname, "../../../test/ewpFiles/main.c");
@@ -56,6 +57,11 @@ suite("CppTools Config Generators for ARM", function() {
         if (!project) {
             Assert.fail("Unable to load test project");
         }
+    });
+
+    suiteTeardown(() => {
+        const depFile = TEST_PROJECT_FILE.replace(".ewp", ".dep");
+        unlinkSync(depFile);
     });
 
     test(".ewp parsing", () => {
