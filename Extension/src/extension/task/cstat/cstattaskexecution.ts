@@ -36,7 +36,7 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
     open(_initialDimensions: Vscode.TerminalDimensions | undefined): void {
         if (!this.definition.builder || !this.definition.project || !this.definition.config) {
             this.writeEmitter.fire("Error: Make sure you select a workbench, project and configuration before running this task.");
-            this.closeEmitter.fire();
+            this.closeEmitter.fire(undefined);
             return;
         }
         if (this.definition.action === "run") {
@@ -85,7 +85,7 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
 
                 this.diagnostics.set(fileDiagnostics);
                 this.writeEmitter.fire("C-STAT is done!\r\n");
-                this.closeEmitter.fire();
+                this.closeEmitter.fire(undefined);
             }, this.onError.bind(this)); /* getAllWarnings.then */
 
         }, this.onError.bind(this)); /* analysis.then */
@@ -97,12 +97,12 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
     private clearDiagnostics() {
         this.writeEmitter.fire("Clearing C-STAT Warnings...\r\n");
         this.diagnostics.clear();
-        this.closeEmitter.fire();
+        this.closeEmitter.fire(undefined);
     }
 
     private onError(reason: any) {
         this.writeEmitter.fire(reason + "\r\n");
-        this.closeEmitter.fire();
+        this.closeEmitter.fire(undefined);
     }
 
     private static warningToDiagnostic(warning: CStat.CStatWarning): Vscode.Diagnostic {
