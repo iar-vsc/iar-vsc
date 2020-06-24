@@ -16,6 +16,7 @@ import { PartialSourceFileConfiguration } from "./data/partialsourcefileconfigur
 /**
  * Provides source file configurations for an IAR project to cpptools via the cpptools typescript api.
  * Uses a mix of a fast but imprecise config detection method and a slower but more accurate method.
+ * Also works without the api (e.g. for old versions of vscode/cpptools), in that case it only outputs the c_cpp_properties file
  */
 export class IarConfigurationProvider implements CustomConfigurationProvider {
     private static _instance: IarConfigurationProvider | undefined = undefined;
@@ -24,21 +25,18 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
     /**
      * Initializes the configuration provider and registers it with the cpptools api
      */
-    public static async init(): Promise<boolean> {
+    public static async init() {
         let api = await getCppToolsApi(Version.v2);
 
-        if (api) {
-            if (IarConfigurationProvider._instance) {
-                IarConfigurationProvider._instance.dispose();
-            }
-
-            const instance = new IarConfigurationProvider(api, new DynamicConfigGenerator());
-            IarConfigurationProvider._instance = instance;
-            return true;
-        } else {
+        if (!api) {
             Vscode.window.showWarningMessage("Cannot connect the IAR extension with the Microsoft CppTools extension. Falling back to the 'c_cpp_properties' json file.");
         }
-        return false;
+        if (IarConfigurationProvider._instance) {
+            IarConfigurationProvider._instance.dispose();
+        }
+
+        const instance = new IarConfigurationProvider(api, new DynamicConfigGenerator());
+        IarConfigurationProvider._instance = instance;
     }
 
     /**
@@ -54,7 +52,8 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
     readonly name = "iar-vsc";
     readonly extensionId = "pluyckx.iar-vsc";
 
-    private constructor(private api: CppToolsApi, private generator: DynamicConfigGenerator) {
+    // if api is undefined, just outputs json file
+    private constructor(private readonly api: CppToolsApi | undefined, private readonly generator: DynamicConfigGenerator) {
         UI.getInstance().compiler.model.addOnSelectedHandler(this.onSettingsChanged.bind(this));
         UI.getInstance().config.model.addOnSelectedHandler(this.onSettingsChanged.bind(this));
         UI.getInstance().project.model.addOnSelectedHandler(this.onSettingsChanged.bind(this));
@@ -62,14 +61,19 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
         Settings.observeSetting(Settings.Field.CStandard, this.onSettingsChanged.bind(this));
         Settings.observeSetting(Settings.Field.CppStandard, this.onSettingsChanged.bind(this));
 
-        this.api.registerCustomConfigurationProvider(this);
+        if (this.api) {
+            this.api.registerCustomConfigurationProvider(this);
+        }
         // to provide configs as fast as possible at startup, do notifyReady as soon as fallback configs are ready,
         // and let the configs be updated when accurate configs are available
         this.generateFallbackConfigs();
-        this.api.notifyReady(this);
-        this.generateAccurateConfigs().then((didChange: boolean) => {
-            if (didChange) { this.api.didChangeCustomConfiguration(this); }
-        });
+
+        if (this.api) {
+            this.api.notifyReady(this);
+            this.generateAccurateConfigs().then((didChange: boolean) => {
+                if (didChange && this.api) { this.api.didChangeCustomConfiguration(this); }
+            });
+        }
     }
 
     // cpptools api methods
@@ -128,7 +132,9 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
     }
     dispose() {
         this.canProvideConfiguration = (): Thenable<boolean> => Promise.reject(false);
-        this.api.dispose();
+        if (this.api) {
+            this.api.dispose();
+        }
         this.generator.dispose();
     }
 
@@ -139,7 +145,7 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
         this.fallbackConfigurationC   = StaticConfigGenerator.generateConfiguration("c", config, project, compiler);
         this.fallbackConfigurationCpp = StaticConfigGenerator.generateConfiguration("cpp", config, project, compiler);
         const mergedConfig = PartialSourceFileConfiguration.merge(this.fallbackConfigurationC, this.fallbackConfigurationCpp);
-        JsonConfigurationWriter.writeJsonConfiguration(mergedConfig, this.name);
+        JsonConfigurationWriter.writeJsonConfiguration(mergedConfig, this.api ? this.name : undefined);
     }
 
     // returns true if configs changed
@@ -163,7 +169,9 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
 
     private async onSettingsChanged() {
         this.generateFallbackConfigs();
-        const changed = await this.generateAccurateConfigs();
-        if (changed) { this.api.didChangeCustomConfiguration(this); }
+        if (this.api) {
+            const changed = await this.generateAccurateConfigs();
+            if (changed) { this.api.didChangeCustomConfiguration(this); }
+        }
     }
 }
