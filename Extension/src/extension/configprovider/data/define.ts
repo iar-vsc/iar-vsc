@@ -118,9 +118,11 @@ export namespace Define {
     }
 
     export function fromSourceFile(path: Fs.PathLike): Define[] {
-        let buf = Fs.readFileSync(path.toString());
-
-        return fromSourceData(buf);
+        if (Fs.existsSync(path)) {
+            let buf = Fs.readFileSync(path.toString());
+            return fromSourceData(buf);
+        }
+        return [];
     }
 
     export function fromSourceData(buf: Buffer): Define[] {

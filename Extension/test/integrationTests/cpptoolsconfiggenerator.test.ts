@@ -17,7 +17,7 @@ import { Settings } from "../../src/extension/settings";
 import { Compiler } from "../../src/iar/tools/compiler";
 import { Platform } from "../../src/iar/tools/platform";
 import { DynamicConfigGenerator } from "../../src/extension/configprovider/dynamicconfiggenerator";
-import { unlinkSync } from "fs";
+import { unlinkSync, existsSync } from "fs";
 
 const TEST_PROJECT_FILE = path.resolve(__dirname, "../../../test/ewpFiles/test_project.ewp");
 const TEST_SOURCE_FILE = path.resolve(__dirname, "../../../test/ewpFiles/main.c");
@@ -61,7 +61,9 @@ suite("CppTools Config Generators for ARM", function() {
 
     suiteTeardown(() => {
         const depFile = TEST_PROJECT_FILE.replace(".ewp", ".dep");
-        unlinkSync(depFile);
+        if (existsSync(depFile)) {
+            unlinkSync(depFile);
+        }
     });
 
     test(".ewp parsing", () => {
@@ -89,23 +91,18 @@ suite("CppTools Config Generators for ARM", function() {
         const generator = new DynamicConfigGenerator();
         Assert(await generator.generateConfiguration(workbench!!, project!!, compiler!!, project!!.configurations[0]));
         const uri = Vscode.Uri.file(TEST_SOURCE_FILE);
-        const defines = generator.getDefines(uri);
-        const includes = generator.getIncludes(uri);
 
-        const actual: PartialSourceFileConfiguration = {
-            defines,
-            includes,
-            preIncludes: [],
-        };
+        const actual = generator.getConfiguration(uri);
+        Assert(actual !== undefined);
 
         const expected = createExpectedResultFromDynamicGenerator(platform!!);
 
         // It's infeasible and unmaintainable to check for all compiler defines (there are about 400),
         // just check that some common expected ones are present
-        verifyDefinesLenient(actual.defines, expected.defines);
-        expected.defines = actual.defines;
+        verifyDefinesLenient(actual!!.defines, expected.defines);
+        expected.defines = actual!!.defines;
 
-        verifySourceConfiguration(actual, expected);
+        verifySourceConfiguration(actual!!, expected);
     });
 
   
@@ -192,8 +189,10 @@ function createExpectedResultFromCompilerSpecifics(platform: Platform): PartialS
 function createExpectedResultFromDynamicGenerator(platform: Platform): PartialSourceFileConfiguration {
     let defines: Define[] = [
         // Now we should have project/configuration specific defines
-        Define.fromIdentifierValuePair("DEBUG", ""),
-        Define.fromIdentifierValuePair("__CHAR_MAX", "127"),
+        // This value is normally 0xff, but is 127 because "signed chars" is enabled for the project
+        Define.fromIdentifierValuePair("__CHAR_MAX__", "127"),
+        // This macro is only defined for main.c
+        Define.fromIdentifierValuePair("_LocalMacro", "1"),
     ];
     // And should be able to find CMSIS
     let cmsisIncPath = path.join(platform.path.toString(), "CMSIS/Core/Include");

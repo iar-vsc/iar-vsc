@@ -17,44 +17,35 @@ export interface PreIncludePath {
     readonly workspaceRelativePath: Fs.PathLike;
 }
 
-export class XmlPreIncludePath implements PreIncludePath {
-    private xmlData: XmlNode;
-    private projectPath: Fs.PathLike;
+class BasePreIncludePath implements PreIncludePath {
 
-    constructor(xml: XmlNode, projectPath: Fs.PathLike) {
-        this.xmlData = xml;
-        this.projectPath = projectPath;
-
-        if (xml.tagName !== "state") {
-            throw new Error("Expected an xml element 'state' instead of '" + xml.tagName + "'.");
-        }
+    constructor(private localPath: Fs.PathLike, private projectPath: Fs.PathLike) {
     }
 
     get path(): Fs.PathLike {
-        let path = this.xmlData.text;
-
-        if (path) {
-            return path;
-        } else {
-            return "";
-        }
+        return this.localPath;
     }
 
     get absolutePath(): Fs.PathLike {
-        let path = this.path.toString();
-
-        return path.replace('$PROJ_DIR$', this.projectPath.toString());
+        return this.localPath.toString().replace('$PROJ_DIR$', this.projectPath.toString());
     }
 
     get workspaceRelativePath(): Fs.PathLike {
         if (Vscode.workspace.rootPath) {
-            let path = this.absolutePath.toString();
-
-            return Path.relative(Vscode.workspace.rootPath, path);
+            return Path.relative(Vscode.workspace.rootPath, this.localPath.toString());
         } else {
             return this.absolutePath;
         }
 
+    }
+}
+
+class XmlPreIncludePath extends BasePreIncludePath {
+    constructor(xml: XmlNode, projectPath: Fs.PathLike) {
+        if (xml.tagName !== "state") {
+            throw new Error("Expected an xml element 'state' instead of '" + xml.tagName + "'.");
+        }
+        super(xml.text ? xml.text : "", projectPath);
     }
 }
 
@@ -83,5 +74,20 @@ export namespace PreIncludePath {
         }
 
         return [];
+    }
+
+    /**
+     * Finds preincludes from a list of command-line arguments to a compiler
+     */
+    export function fromCompilerArgs(args: string[], projectPath: Fs.PathLike): PreIncludePath[] {
+        const preIncludePaths: PreIncludePath[] = [];
+        for (let i = 0; i < args.length; i++) {
+            if (args[i] === "--preinclude") {
+                if (i+1 < args.length) {
+                    preIncludePaths.push(new BasePreIncludePath(args[i+1], projectPath));
+                }
+            }
+        }
+        return preIncludePaths;
     }
 }

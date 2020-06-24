@@ -17,6 +17,8 @@ import { Compiler } from "../../iar/tools/compiler";
 import { tmpdir } from "os";
 import * as Path from "path";
 import { OsUtils, LanguageUtils } from "../../utils/utils";
+import { PartialSourceFileConfiguration } from "./data/partialsourcefileconfiguration";
+import { PreIncludePath } from "./data/preincludepath";
 
 /**
  * Generates/detects per-file configuration data (include paths/defines) for an entire project,
@@ -85,7 +87,7 @@ export class DynamicConfigGenerator {
             const compilerInvocations = await this.findCompilerInvocations(builderProc.stdout);
 
             let hasIncorrectCompiler = false;
-            const fileConfigs: Array<{includes: IncludePath[], defines: Define[]}> = [];
+            const fileConfigs: PartialSourceFileConfiguration[] = [];
             for (let i = 0; i < compilerInvocations.length; i++) {
                 const compInv = compilerInvocations[i];
                 if (LanguageUtils.determineLanguage(compInv[1]) === undefined) {
@@ -98,7 +100,7 @@ export class DynamicConfigGenerator {
                     continue;
                 }
                 try {
-                    fileConfigs.push(await this.generateConfigurationForFile(compiler, compInv.slice(1)));
+                    fileConfigs.push(await this.generateConfigurationForFile(compiler, compInv.slice(1), project));
                 } catch {}
 
                 if (this.shouldCancel) {
@@ -109,8 +111,7 @@ export class DynamicConfigGenerator {
 
             fileConfigs.forEach((fileConfig, index) => {
                 const uri = Vscode.Uri.file(compilerInvocations[index][1]);
-                this.putIncludes(uri, fileConfig.includes);
-                this.putDefines(uri, fileConfig.defines);
+                this.putConfiguration(uri, fileConfig);
             });
             if (hasIncorrectCompiler) {
                 Vscode.window.showWarningMessage("IAR: The selected compiler does not appear to match the one used by the project.");
@@ -119,18 +120,12 @@ export class DynamicConfigGenerator {
         });
     }
 
-    public getIncludes(file: Vscode.Uri): IncludePath[] {
-        return this.cache.getIncludes(file);
-    }
-    public getDefines(file: Vscode.Uri): Define[] {
-        return this.cache.getDefines(file);
+    public getConfiguration(file: Vscode.Uri): PartialSourceFileConfiguration | undefined {
+        return this.cache.getConfiguration(file);
     }
 
-    private putIncludes(file: Vscode.Uri, includes: IncludePath[]) {
-        this.cache.putIncludes(file, includes);
-    }
-    private putDefines(file: Vscode.Uri, defines: Define[]) {
-        this.cache.putDefines(file, defines);
+    private putConfiguration(file: Vscode.Uri, config: PartialSourceFileConfiguration) {
+        this.cache.putConfiguration(file, config);
     }
 
     // parses output from builder to find the calls to a compiler (eg iccarm) and what arguments it uses
@@ -190,9 +185,9 @@ export class DynamicConfigGenerator {
      * It is unadvised to run multiple instances of this function at the same time,
      * doing so may cause undefined behaviour.  TODO: fix this by using a unique predef_macros file
      */
-    private generateConfigurationForFile(compiler: Compiler, compilerArgs: string[]): Promise<{includes: IncludePath[], defines: Define[]}> {
+    private generateConfigurationForFile(compiler: Compiler, compilerArgs: string[], project: Project): Promise<PartialSourceFileConfiguration> {
         const macrosOutFile = join(tmpdir(), "iarvsc.predef_macros");
-        const args = ["--IDE3", "--NCG", "--predef-macros", macrosOutFile].concat(compilerArgs);
+        const args = ["--IDE3", "--NCG", "--predef_macros", macrosOutFile].concat(compilerArgs);
         const compilerProc = spawn(compiler.path.toString(), args);
         return new Promise((resolve, reject) => {
             compilerProc.on("error", (err) => {
@@ -210,9 +205,11 @@ export class DynamicConfigGenerator {
                 const output = Buffer.concat(chunks).toString();
                 const includePaths = IncludePath.fromCompilerOutput(output);
                 const defines = Define.fromSourceFile(macrosOutFile);
+                const preIncludePaths = PreIncludePath.fromCompilerArgs(compilerArgs, Path.parse(project.path.toString()).dir);
                 resolve({
                     includes: includePaths,
                     defines: defines,
+                    preIncludes: preIncludePaths,
                 });
             });
 

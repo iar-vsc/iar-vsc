@@ -6,6 +6,7 @@
 
 import * as Fs from "fs";
 import { Define } from "./define";
+import { FileChangeType } from "vscode";
 
 export interface Keyword {
     readonly identifier: string;
@@ -25,9 +26,12 @@ export namespace Keyword {
      * @param path The path to the syntax file
      */
     export function fromSyntaxFile(path: Fs.PathLike): Keyword[] {
-        const buf = Fs.readFileSync(path.toString());
-        const contents = buf.toString();
-        return fromSyntaxFileContents(contents);
+        if (Fs.existsSync(path)) {
+            const buf = Fs.readFileSync(path.toString());
+            const contents = buf.toString();
+            return fromSyntaxFileContents(contents);
+        }
+        return [];
     }
 
     export function fromSyntaxFileContents(contents: string): Keyword[] {

@@ -84,8 +84,10 @@ export class IarConfigurationProvider implements CustomConfigurationProvider {
         return Promise.resolve(uris.map(uri => {
             const lang = LanguageUtils.determineLanguage(uri.fsPath);
             const baseConfiguration = lang === "c" ? this.fallbackConfigurationC : this.fallbackConfigurationCpp;
-            const fileConfiguration = { includes: this.generator.getIncludes(uri), preIncludes: [], defines: this.generator.getDefines(uri) };
-            const mergedConfiguration = PartialSourceFileConfiguration.merge(baseConfiguration, fileConfiguration);
+            const fileConfiguration = this.generator.getConfiguration(uri);
+            const mergedConfiguration = fileConfiguration ?
+                                                            PartialSourceFileConfiguration.merge(baseConfiguration, fileConfiguration)
+                                                            : baseConfiguration;
 
             let stringDefines = mergedConfiguration.defines.map(d => d.makeString());
             stringDefines = stringDefines.concat(Settings.getDefines()); // user-defined extra macros

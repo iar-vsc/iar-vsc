@@ -3,41 +3,27 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { Uri } from "vscode";
-import { IncludePath } from "./data/includepath";
-import { Define } from "./data/define";
+import { PartialSourceFileConfiguration } from "./data/partialsourcefileconfiguration";
 
 /**
  * Caches project configuration data (include paths/defines).
  */
 export interface ConfigurationCache {
-    getIncludes(file: Uri): IncludePath[];
-    putIncludes(file: Uri, includes: IncludePath[]): void;
-    getDefines(file: Uri): Define[];
-    putDefines(file: Uri, defines: Define[]): void;
+    getConfiguration(file: Uri): PartialSourceFileConfiguration | undefined;
+    putConfiguration(file: Uri, configuration: PartialSourceFileConfiguration): void;
 }
 
 /**
  * Maps file paths to their config data using a regular javascript object indexed by file path
  */
 export class SimpleConfigurationCache implements ConfigurationCache {
-    private includes: Record<string, IncludePath[]> = {};
-    private defines: Record<string, Define[]> = {};
+    private configurations: Record<string, PartialSourceFileConfiguration> = {};
 
-    getIncludes(file: Uri): IncludePath[] {
-        const cached = this.includes[file.path.toLowerCase()];
-        return cached ? cached : [];
+    getConfiguration(file: Uri): PartialSourceFileConfiguration | undefined {
+        return this.configurations[file.path.toLowerCase()];
     }
 
-    putIncludes(file: Uri, includes: IncludePath[]) {
-        this.includes[file.path.toLowerCase()] = includes;
-    }
-
-    getDefines(file: Uri): Define[] {
-        const cached = this.defines[file.path.toLowerCase()];
-        return cached ? cached : [];
-    }
-
-    putDefines(file: Uri, defines: Define[]) {
-        this.defines[file.path.toLowerCase()] = defines;
+    putConfiguration(file: Uri, configuration: PartialSourceFileConfiguration) {
+        this.configurations[file.path.toLowerCase()] = configuration;
     }
 }
