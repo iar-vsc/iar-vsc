@@ -9,8 +9,8 @@ import * as fs from 'fs';
 export function run(): Promise<void> {
     const mocha = new Mocha({
         ui: 'tdd',
-        color: true,
     });
+    mocha.useColors(true);
 
     const testsRoot = path.resolve(__dirname);
 

@@ -89,7 +89,7 @@ class StringDefine extends BaseDefine {
 }
 
 export namespace Define {
-    export function fromIdentifierValuePair(identifier: string, value: string): Define {
+    export function fromIdentifierValuePair(identifier: string, value: string | undefined): Define {
         return new StringDefine(identifier, value);
     }
 
