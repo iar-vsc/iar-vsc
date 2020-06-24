@@ -147,14 +147,16 @@ export class DynamicConfigGenerator {
                     const args = [line.slice(0, endOfFirstArg)]; // first arg (compiler name) is unquoted, so handle it specially
                     let argsRaw = line.slice(endOfFirstArg).trim();
                     argsRaw = argsRaw.replace(/"\\(\s+)"/g, "\"$1\""); // IarBuild inserts some weird backslashes we want to get rid of
-                    const argDelimRegex = /"\s+"/;
+                    const argDelimRegex = /[^\\]"\s+"/;
                     let match: RegExpExecArray | null;
                     while ((match = argDelimRegex.exec(argsRaw)) !== null) {
-                        args.push(this.stripQuotes(argsRaw.slice(0, match.index)));
-                        argsRaw = argsRaw.slice(match.index + 1);
+                        const arg = (argsRaw.slice(0, match.index + 1));
+                        args.push(this.stripQuotes(arg));
+                        argsRaw = argsRaw.slice(match.index + 2);
                     }
                     args.push(this.stripQuotes(argsRaw));
-                    compilerInvocations.push(args);
+                    // Escaped quotes should be unescaped after parsing args
+                    compilerInvocations.push(args.map(arg => arg.replace(/\\"/g, "\"")));
                 }
                 else if (line.match(/^Linking/)) { // usually the promise finishes here
                     lineReader.removeAllListeners();
@@ -176,7 +178,7 @@ export class DynamicConfigGenerator {
         if (str.startsWith("\"")) {
             str = str.slice(1);
         }
-        if (str.endsWith("\"")) {
+        if (str.match(/[^\\]"$/)) { // ends with unescaped quote
             str = str.slice(0, -1);
         }
         return str;

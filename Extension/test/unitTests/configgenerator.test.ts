@@ -12,8 +12,8 @@ suite("Test config generator", () => {
 
         {
             let buildOutput = "\nBanner...\n\n";
-            buildOutput += ">iccarm.exe \"-D\" \"DEBUG\" \"-I\" \"C:\\My Include Dir\\\"\\ \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
-            buildOutput += "> iccarm.exe \"-D\" \"DEBUG\" \"-I\" \"C:\\My Include Dir\\\" \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
+            buildOutput += ">iccarm.exe \"-D\" \"DEBUG\" \"-I\" \"C:\\My Include Dir\"\\ \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
+            buildOutput += ">iccarm.exe \"-D\" \"DEBUG\" \"-I\" \"C:\\My Include Dir\" \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
             buildOutput += "Linking\n\n";
             buildOutput += ">ilinkarm.exe params";
 
@@ -23,15 +23,15 @@ suite("Test config generator", () => {
             readable.push(null);
             const invocations = await generator["findCompilerInvocations"](readable); // Hacky way of accessing private function
             Assert.equal(invocations.length, 2);
-            stringArrayAssert(invocations[0], ["iccarm.exe", "-D", "DEBUG", "-I", "C:\\My Include Dir\\", "--cpu=Cortex-A53", "-D", "\"MyStringDefine\"", "--no_cse"]);
-            stringArrayAssert(invocations[1], ["iccarm.exe", "-D", "DEBUG", "-I", "C:\\My Include Dir\\", "--cpu=Cortex-A53", "-D", "\"MyStringDefine\"", "--no_cse"]);
+            stringArrayAssert(invocations[0], ["iccarm.exe", "-D", "DEBUG", "-I", "C:\\My Include Dir", "--cpu=Cortex-A53", "-D", "\"MyStringDefine\"", "--no_cse"]);
+            stringArrayAssert(invocations[1], ["iccarm.exe", "-D", "DEBUG", "-I", "C:\\My Include Dir", "--cpu=Cortex-A53", "-D", "\"MyStringDefine\"", "--no_cse"]);
         }
 
         {
             // test linux and AVR variant
             let buildOutput = "\nBanner...\n\n";
             buildOutput += ">iccavr \"-D\" \"DEBUG\" \"-I\" \"/usr/My Include Dir/\"\\ \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
-            buildOutput += "> iccavr \"-D\" \"DEBUG\" \"-I\" \"/usr/My Include Dir/\" \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
+            buildOutput += ">iccavr \"-D\" \"DEBUG\" \"-I\" \"/usr/My Include Dir/\" \"--cpu=Cortex-A53\" \"-D\" \"\\\"MyStringDefine\\\"\" \"--no_cse\" \n";
             buildOutput += "Linking\n\n";
             buildOutput += ">xlink params";
             const readable = new Readable();
