@@ -6,7 +6,6 @@
 
 import * as Fs from "fs";
 import { Define } from "./define";
-import { FileChangeType } from "vscode";
 
 export interface Keyword {
     readonly identifier: string;
