@@ -133,6 +133,11 @@ This will also let the extension find any other workbench installations in that 
 
 ## Release Notes
 
+### 1.3.0
+
+* Pull #74: New source file configuration system. This should be much more accurate than the previous one, and handles cases such as CMSIS headers, c++ files, variable expansion, external define files.
+* Pull #75: Fix a bug where workbenches were not detected on linux
+
 ### 1.2.1
 
 * Remove 'Scan for task output' dialog when running C-STAT tasks
