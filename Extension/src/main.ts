@@ -12,9 +12,10 @@ import { Settings } from './extension/settings';
 import { SettingsMonitor } from './extension/settingsmonitor';
 import { IarTaskProvider } from './extension/task/provider';
 import { GetSettingsCommand } from "./extension/command/getsettings";
+import { IarConfigurationProvider } from './extension/configprovider/configurationprovider';
 import { CStatTaskProvider } from './extension/task/cstat/cstattaskprovider';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     GetSettingsCommand.initCommands(context);
     UI.init(context, IarVsc.toolManager);
 
@@ -27,11 +28,15 @@ export function activate(context: vscode.ExtensionContext) {
     loadTools();
     Settings.observeSetting(Settings.Field.IarInstallDirectories, loadTools);
 
+    IarConfigurationProvider.init();
     IarTaskProvider.register();
     CStatTaskProvider.register(context);
 }
 
 export function deactivate() {
+    if (IarConfigurationProvider.instance) {
+        IarConfigurationProvider.instance.dispose();
+    }
     IarTaskProvider.unregister();
     CStatTaskProvider.unRegister();
 }

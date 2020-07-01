@@ -127,7 +127,7 @@ class EwpFile implements Project {
     }
 
     private loadConfigurations(): Config[] {
-        return Config.fromXml(this.xml, this.path);
+        return Config.fromXml(this.xml);
     }
 
     private fireChanged() {

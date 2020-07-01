@@ -5,12 +5,14 @@
 'use strict';
 
 import * as Fs from "fs";
-import { XmlNode } from "../../utils/XmlNode";
-import { IarXml } from "../../utils/xml";
+import { XmlNode } from "../../../utils/XmlNode";
+import { IarXml } from "../../../utils/xml";
 
 export interface Define {
     readonly identifier: string;
     readonly value: string | undefined;
+    /** Creates a string that cpptools can understand (e.g. 'MYMACRO=2') */
+    makeString(): string;
 }
 
 enum DefinePart {
@@ -18,10 +20,20 @@ enum DefinePart {
     Value
 }
 
-class XmlDefine implements Define {
+abstract class BaseDefine implements Define {
+    abstract identifier: string;
+    abstract value: string | undefined;
+    makeString(): string {
+        const val = this.value ? this.value : "";
+        return `${this.identifier}=${val}`;
+    }
+}
+
+class XmlDefine extends BaseDefine {
     private xmlData: XmlNode;
 
     constructor(xml: XmlNode) {
+        super();
         this.xmlData = xml;
 
         if (xml.tagName !== "state") {
@@ -65,18 +77,19 @@ class XmlDefine implements Define {
     }
 }
 
-class StringDefine implements Define {
+class StringDefine extends BaseDefine {
     readonly identifier: string;
     readonly value: string | undefined;
 
     constructor(identifier: string, value: string | undefined) {
+        super();
         this.identifier = identifier;
         this.value = value;
     }
 }
 
 export namespace Define {
-    export function fromIdentifierValuePair(identifier: string, value: string): Define {
+    export function fromIdentifierValuePair(identifier: string, value: string | undefined): Define {
         return new StringDefine(identifier, value);
     }
 
@@ -105,9 +118,11 @@ export namespace Define {
     }
 
     export function fromSourceFile(path: Fs.PathLike): Define[] {
-        let buf = Fs.readFileSync(path.toString());
-
-        return fromSourceData(buf);
+        if (Fs.existsSync(path)) {
+            let buf = Fs.readFileSync(path.toString());
+            return fromSourceData(buf);
+        }
+        return [];
     }
 
     export function fromSourceData(buf: Buffer): Define[] {

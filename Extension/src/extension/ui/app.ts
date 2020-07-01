@@ -10,7 +10,7 @@ import { WorkbenchListModel } from "../model/selectworkbench";
 import { SelectionView } from "./selectionview";
 import { Settings } from "../settings";
 import { Command } from "../command/command";
-import { Command as GenerateCommand } from "../command/generatecpptoolsconf";
+import { Command as RegenerateCommand } from "../command/regeneratecpptoolsconf";
 import { Workbench } from "../../iar/tools/workbench";
 import { CompilerListModel } from "../model/selectcompiler";
 import { ListInputModel } from "../model/model";
@@ -40,6 +40,8 @@ class Application {
     readonly generator: Command;
     readonly selectIarWorkspace: Command;
 
+    //private cppToolsProvider: IarConfigurationProvider | undefined;
+
     constructor(context: Vscode.ExtensionContext, toolManager: ToolManager) {
         this.context = context;
         this.toolManager = toolManager;
@@ -56,7 +58,7 @@ class Application {
                                                                                         this.config.model));
 
         // Create commands without UI
-        this.generator = GenerateCommand.createGenerateCppToolsConfig(this.compiler.model as CompilerListModel,
+        this.generator = RegenerateCommand.createRegenerateCppToolsConfig(this.compiler.model as CompilerListModel,
             this.config.model as ConfigurationListModel);
         this.generator.register(context);
 
@@ -175,12 +177,6 @@ class Application {
         };
     }
 
-    private generateOutput(): void {
-        if ((this.generator.enabled) && (this.generator.canExecute())) {
-            this.generator.execute(true);
-        }
-    }
-
     private selectCurrentSettings(): void {
         this.selectCurrentWorkbench();
         this.selectCurrentCompiler();
@@ -263,20 +259,6 @@ class Application {
 
         this.addProjectModelListeners();
         this.addConfigurationModelListeners();
-
-        this.addSettingsListener();
-    }
-
-    private addSettingsListener(): void {
-        Settings.observeSetting(Settings.Field.Defines, () => {
-            this.generateOutput();
-        });
-        Settings.observeSetting(Settings.Field.CStandard, () => {
-            this.generateOutput();
-        });
-        Settings.observeSetting(Settings.Field.CppStandard, () => {
-            this.generateOutput();
-        });
     }
 
     private addToolManagerListeners(): void {
@@ -321,10 +303,6 @@ class Application {
         model.addOnInvalidateHandler(() => {
             this.selectCurrentCompiler();
         });
-
-        model.addOnSelectedHandler(() => {
-            this.generateOutput();
-        });
     }
 
     private addProjectModelListeners(): void {
@@ -345,10 +323,6 @@ class Application {
 
         model.addOnInvalidateHandler(() => {
             this.selectCurrentConfiguration();
-        });
-
-        model.addOnSelectedHandler(() => {
-            this.generateOutput();
         });
     }
 }
