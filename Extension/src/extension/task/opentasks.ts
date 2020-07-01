@@ -8,6 +8,7 @@ import * as Vscode from "vscode";
 import { isArray } from "util";
 import { IarExecution } from "./iarexecution";
 import { OsUtils } from "../../utils/utils";
+import { Workbench } from "../../iar/tools/workbench";
 
 export interface OpenTaskDefinition {
     readonly label: string;
@@ -103,7 +104,7 @@ export namespace OpenTasks {
             label: label,
             type: "iar",
             command: "open",
-            workbench: "${command:iar-settings.workbench}\\\\common\\\\bin\\\\IarIdePm.exe",
+            workbench: "${command:iar-settings.workbench}/" + Workbench.ideSubPath,
             workspace: "${command:iar.selectIarWorkspace}",
             problemMatcher: []
         };
