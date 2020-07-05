@@ -5,8 +5,10 @@
 'use strict';
 
 import * as Fs from "fs";
+
 import { XmlNode } from "../../utils/XmlNode";
 import { IarXml } from "../../utils/xml";
+
 
 export interface Define {
     readonly identifier: string;
@@ -141,8 +143,10 @@ export namespace Define {
         states.forEach(state => {
             try {
                 if (state.text != undefined) {
-                    let fullPath = state.text.replace("-f $PROJ_DIR$", projectRoot)
-                    defines = defines.concat(fromComilerExtraOptionFile(fullPath));
+                    let fullPath = state.text.replace("-f $PROJ_DIR$", projectRoot);
+                    if (Fs.existsSync(fullPath)) {
+                        defines = defines.concat(fromComilerExtraOptionFile(fullPath));
+                    }
                 }
             } catch (e) {
             }
