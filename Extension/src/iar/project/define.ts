@@ -5,10 +5,8 @@
 'use strict';
 
 import * as Fs from "fs";
-
 import { XmlNode } from "../../utils/XmlNode";
 import { IarXml } from "../../utils/xml";
-
 
 export interface Define {
     readonly identifier: string;
@@ -93,13 +91,13 @@ export namespace Define {
 
             option = IarXml.findOptionFromSettings(settings, 'Compiler Extra Options Edit');
             if (option) {
-                defines = defines.concat(fromSpecifiedFileInXml(option, projectRoot));
+                defines.push(...fromSpecifiedFileInXml(option, projectRoot));
             }
         }
         return defines;
     }
 
-    function fromXmlDirectly(option: XmlNode) {
+    function fromXmlDirectly(option: XmlNode): Define[] {
         let states = option.getAllChildsByName('state');
         let defines: Define[] = [];
 
@@ -113,7 +111,7 @@ export namespace Define {
         return defines;
     }
 
-    function fromComilerExtraOptionFile(path: string) {
+    function fromComilerExtraOptionFile(path: string): Define[] {
         let defines = new Array<Define>();
         let content = Fs.readFileSync(path).toString()
         let lines = content.split(/\r\n|\n/);
@@ -137,7 +135,7 @@ export namespace Define {
         return defines;
     }
 
-    function fromSpecifiedFileInXml(option: XmlNode, projectRoot: string) {
+    function fromSpecifiedFileInXml(option: XmlNode, projectRoot: string): Define[] {
         let states = option.getAllChildsByName('state');
         let defines: Define[] = []
         states.forEach(state => {
@@ -145,7 +143,7 @@ export namespace Define {
                 if (state.text != undefined) {
                     let fullPath = state.text.replace("-f $PROJ_DIR$", projectRoot);
                     if (Fs.existsSync(fullPath)) {
-                        defines = defines.concat(fromComilerExtraOptionFile(fullPath));
+                        defines.push(...fromComilerExtraOptionFile(fullPath));
                     }
                 }
             } catch (e) {
