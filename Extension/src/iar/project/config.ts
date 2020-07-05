@@ -36,7 +36,7 @@ class XmlConfig implements Config {
 
         const projectRoot = Path.parse(ewpPath.toString()).dir;
 
-        this.defines = Define.fromXml(xmlConfigElement);
+        this.defines = Define.fromXml(xmlConfigElement, projectRoot);
         this.includes = IncludePath.fromXmlData(xmlConfigElement, projectRoot);
         this.preIncludes = PreIncludePath.fromXml(xmlConfigElement, projectRoot);
     }

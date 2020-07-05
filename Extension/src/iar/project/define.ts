@@ -76,32 +76,78 @@ class StringDefine implements Define {
 }
 
 export namespace Define {
-    export function fromIdentifierValuePair(identifier: string, value: string): Define {
+    export function fromIdentifierValuePair(identifier: string, value: string | undefined): Define {
         return new StringDefine(identifier, value);
     }
 
-    export function fromXml(configNode: XmlNode): Define[] {
+    export function fromXml(configNode: XmlNode, projectRoot: string): Define[] {
         let settings = IarXml.findSettingsFromConfig(configNode, '/ICC.*/');
-
+        let defines: Define[] = [];
         if (settings) {
             let option = IarXml.findOptionFromSettings(settings, 'CCDefines');
-
             if (option) {
-                let states = option.getAllChildsByName('state');
-                let defines: Define[] = [];
+                defines = fromXmlDirectly(option);
+            }
 
-                states.forEach(state => {
-                    try {
-                        defines.push(new XmlDefine(state));
-                    } catch (e) {
-                    }
-                });
-
-                return defines;
+            option = IarXml.findOptionFromSettings(settings, 'Compiler Extra Options Edit');
+            if (option) {
+                defines = defines.concat(fromSpecifiedFileInXml(option, projectRoot));
             }
         }
+        return defines;
+    }
 
-        return [];
+    function fromXmlDirectly(option: XmlNode) {
+        let states = option.getAllChildsByName('state');
+        let defines: Define[] = [];
+
+        states.forEach(state => {
+            try {
+                defines.push(new XmlDefine(state));
+            }
+            catch (e) {
+            }
+        });
+        return defines;
+    }
+
+    function fromComilerExtraOptionFile(path: string) {
+        let defines = new Array<Define>();
+        let content = Fs.readFileSync(path).toString()
+        let lines = content.split(/\r\n|\n/);
+
+        lines.forEach(line => {
+            if (line.startsWith("-D")) {
+                let commentStart = line.indexOf("//");
+                if (commentStart > 0) {
+                    line = line.substring(2, commentStart).trim();
+                } else {
+                    line = line.substring(2).trim();
+                }
+                let definePair = line.split(/=/);
+                if (definePair.length == 2) {
+                    defines.push(fromIdentifierValuePair(definePair[0].trim(), definePair[1].trim()));
+                } else {
+                    defines.push(fromIdentifierValuePair(definePair[0].trim(), undefined));
+                }
+            }
+        });
+        return defines;
+    }
+
+    function fromSpecifiedFileInXml(option: XmlNode, projectRoot: string) {
+        let states = option.getAllChildsByName('state');
+        let defines: Define[] = []
+        states.forEach(state => {
+            try {
+                if (state.text != undefined) {
+                    let fullPath = state.text.replace("-f $PROJ_DIR$", projectRoot)
+                    defines = defines.concat(fromComilerExtraOptionFile(fullPath));
+                }
+            } catch (e) {
+            }
+        });
+        return defines;
     }
 
     export function fromSourceFile(path: Fs.PathLike): Define[] {
