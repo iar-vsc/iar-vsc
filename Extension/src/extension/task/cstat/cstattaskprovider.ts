@@ -5,6 +5,7 @@
 import * as Vscode from "vscode";
 import { OsUtils } from "../../../utils/utils";
 import { CStatTaskExecution } from "./cstattaskexecution";
+import { Workbench } from "../../../iar/tools/workbench";
 
 export namespace CStatTaskProvider {
     let taskProvider: Vscode.Disposable | undefined = undefined;
@@ -92,7 +93,7 @@ class CStatProvider implements Vscode.TaskProvider {
             label: label,
             type: "iar-cstat",
             action: action,
-            builder: "${command:iar-settings.workbench}/common/bin/IarBuild" + (OsUtils.detectOsType() === OsUtils.OsType.Windows ? ".exe" : ""),
+            builder: "${command:iar-settings.workbench}/" + Workbench.builderSubPath,
             project: "${command:iar-settings.project-file}",
             config: "${command:iar-settings.project-configuration}",
         };

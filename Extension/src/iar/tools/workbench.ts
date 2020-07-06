@@ -7,10 +7,8 @@
 import * as Fs from "fs";
 import * as Path from "path";
 import { FsUtils } from "../../utils/fs";
-import { ListUtils } from "../../utils/utils";
+import { ListUtils, OsUtils } from "../../utils/utils";
 import { Platform } from "./platform";
-
-const ideSubPath = "common/bin/IarIdePm.exe";
 
 export interface Workbench {
     readonly name: string;
@@ -33,7 +31,7 @@ class IarWorkbench implements Workbench {
      */
     constructor(path: Fs.PathLike) {
         this.path = path;
-        this.idePath = Path.join(this.path.toString(), ideSubPath);
+        this.idePath = Path.join(this.path.toString(), Workbench.ideSubPath);
 
         if (!this.isValid()) {
             throw new Error("Path does not point to a workspace!");
@@ -55,6 +53,9 @@ class IarWorkbench implements Workbench {
 }
 
 export namespace Workbench {
+    export const ideSubPath = "common/bin/IarIdePm.exe";
+    export const builderSubPath = "common/bin/IarBuild" + (OsUtils.OsType.Windows === OsUtils.detectOsType() ? ".exe" : "");
+
     /**
      * Search for valid workbenches. The found workbenches are stored in the
      * Workbench class and are accessible using the static accessor functions.
@@ -116,10 +117,10 @@ export namespace Workbench {
     }
 
     export function isValid(workbenchPath: Fs.PathLike): boolean {
-        const idePath = Path.join(workbenchPath.toString(), ideSubPath);
+        const builderPath = Path.join(workbenchPath.toString(), builderSubPath);
 
         try {
-            const stat = Fs.statSync(idePath);
+            const stat = Fs.statSync(builderPath);
 
             return stat.isFile();
         } catch (e) {

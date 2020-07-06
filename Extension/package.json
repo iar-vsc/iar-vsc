@@ -2,7 +2,7 @@
   "name": "iar-vsc",
   "displayName": "IAR For Visual Studio Code",
   "description": "Develop IAR projects with intellisense, C-STAT and build support.",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "publisher": "pluyckx",
   "icon": "images/logo.png",
   "preview": true,
@@ -28,7 +28,7 @@
     "onCommand:iar.selectCompiler",
     "onCommand:iar.selectProject",
     "onCommand:iar.selectConfiguration",
-    "onCommand:iar.generateCppToolsConfig",
+    "onCommand:iar.regenerateCppToolsConfig",
     "onCommand:iar.selectIarWorkspace",
     "workspaceContains:**/*.ewp"
   ],
@@ -56,8 +56,8 @@
         "category": "IAR"
       },
       {
-        "command": "iar.generateCppToolsConfig",
-        "title": "Generate CppTools Config File",
+        "command": "iar.regenerateCppToolsConfig",
+        "title": "Reload project configuration",
         "category": "IAR"
       },
       {
@@ -92,7 +92,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "iar.generateCppToolsConfig",
+          "command": "iar.regenerateCppToolsConfig",
           "when": "view == iar-settings"
         }
       ]
@@ -122,6 +122,7 @@
           "type": "array",
           "description": "A list of defines to use which are not listed in the project xml or compiler output. You can for example define here compiler intrisics, like __max, __min, __eeprom, .... example __max: add `__max(a, b)=` to this list.",
           "default": [
+            "_Pragma(x)=",
             "__eeprom=",
             "__flash=",
             "__no_init=",
@@ -131,18 +132,16 @@
         "iarvsc.cStandard": {
           "type": "string",
           "enum": [
-            "${default}",
             "c89",
             "c99",
             "c11"
           ],
           "description": "The c standard to use in the config tool configuration.",
-          "default": "${default}"
+          "default": "c11"
         },
         "iarvsc.cppStandard": {
           "type": "string",
           "enum": [
-            "${default}",
             "c++98",
             "c++03",
             "c++11",
@@ -150,7 +149,7 @@
             "c++17"
           ],
           "description": "The c++ standard to use in the config tool configuration.",
-          "default": "${default}"
+          "default": "c++14"
         },
         "iarvsc.c-StatFilterLevel": {
           "description": "C-STAT warnings with a lower severity than this are filtered out.",
@@ -352,7 +351,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    "test": "npm run compile && node ./out/test/runTests.js"
   },
   "devDependencies": {
     "typescript": "^2.6.1",
@@ -361,13 +360,16 @@
     "tslint": "^5.8.0",
     "@types/node": "^8.10.25",
     "@types/mocha": "^2.2.42",
+    "mocha": "^2.2.42",
     "ts-sinon": "1.0.12"
   },
   "dependencies": {
     "csv-parse": "4.8.8",
-    "xml-js": "1.6.8",
-    "jsonc-parser": "1.0.0",
     "child-exec": "1.0.0",
-    "fast-deep-equal": "2.0.1"
+    "fast-deep-equal": "2.0.1",
+    "jsonc-parser": "1.0.0",
+    "vscode-cpptools": "^3.0.1",
+    "vscode-jsonrpc": "^3.0.0",
+    "xml-js": "1.6.8"
   }
 }
