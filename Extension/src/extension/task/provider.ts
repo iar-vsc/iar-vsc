@@ -3,9 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import * as Vscode from "vscode";
-import * as Fs from "fs";
 import * as Path from "path";
-import * as Jsonc from "jsonc-parser";
 
 import { BuildTasks } from "./buildtasks";
 import { OpenTasks } from "./opentasks";
@@ -26,7 +24,13 @@ export namespace IarTaskProvider {
                     return tasks;
                 },
                 resolveTask: (_task: Vscode.Task) => {
-                    return undefined;
+                    const definition = _task.definition;
+                    if (definition["command"] === "open") {
+                        return OpenTasks.generateFromDefinition(definition);
+                    } else {
+                        return BuildTasks.generateFromDefinition(definition);
+
+                    }
                 }
             });
         }
@@ -67,44 +71,9 @@ export namespace IarTaskProvider {
     function getTasks(): Vscode.Task[] {
         let tasks = new Map<string, Vscode.Task>();
 
-        let json = readTasksJson();
-
-        if (json !== undefined) {
-            BuildTasks.generateFromTasksJson(json, tasks);
-            OpenTasks.generateFromTasksJson(json, tasks);
-        }
-
         BuildTasks.generateTasks(tasks);
         OpenTasks.generateTasks(tasks);
 
         return Array.from(tasks.values());
-    }
-
-    function readTasksJson(): any | undefined {
-        let workspaceFolders = Vscode.workspace.workspaceFolders;
-
-        if (workspaceFolders === undefined) {
-            return undefined;
-        }
-
-        let workspaceFolder = workspaceFolders[0];
-
-        if (workspaceFolder === undefined) {
-            return undefined;
-        }
-
-        let path = Path.join(workspaceFolder.uri.fsPath, ".vscode", "tasks.json");
-
-        try {
-            let stat = Fs.statSync(path);
-
-            if (!stat.isFile()) {
-                return undefined;
-            }
-        } catch (e) {
-            return undefined;
-        }
-
-        return Jsonc.parse(Fs.readFileSync(path, { encoding: "utf8" }));
     }
 }
