@@ -5,7 +5,6 @@
 'use strict';
 
 import * as Vscode from "vscode";
-import { isArray } from "util";
 import { IarExecution } from "./iarexecution";
 import { OsUtils } from "../../utils/utils";
 import { Workbench } from "../../iar/tools/workbench";
@@ -76,27 +75,6 @@ export namespace OpenTasks {
             task.problemMatchers = definition["problemMatcher"];
         }
         return task;
-    }
-
-    export function generateFromTasksJson(json: any, dst: Map<string, Vscode.Task>): void {
-        let tasks: any = json["tasks"];
-        let tasksAsArray: Array<any>;
-
-        if ((tasks === undefined) || !isArray(tasks)) {
-            return;
-        } else {
-            tasksAsArray = tasks as Array<any>;
-        }
-
-        tasksAsArray.forEach(taskDefinition => {
-            if (taskDefinition["type"] === "iar") {
-                let task = generateFromDefinition(taskDefinition);
-
-                if (task) {
-                    dst.set(taskDefinition["label"], task);
-                }
-            }
-        });
     }
 
     function generateTask(label: string): Vscode.Task | undefined {
