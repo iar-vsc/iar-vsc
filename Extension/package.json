@@ -166,6 +166,11 @@
           "type": "boolean",
           "default": false
         },
+        "iarvsc.c-StatFilterSuppressions": {
+          "description": "If checked, excludes suppressed warnings from the problems tab (e.g., marked inline via `//cstat -MISRA2004*`).",
+          "type": "boolean",
+          "default": true
+        },
         "iarvsc.outFile": {
           "type": "string",
           "description": "Currently not used, but will be used in the future to generate launch configurations.",
@@ -354,20 +359,22 @@
     "test": "npm run compile && node ./out/test/runTests.js"
   },
   "devDependencies": {
-    "typescript": "^2.6.1",
-    "@types/vscode": "^1.33.0",
-    "vscode-test": "^1.3.0",
-    "tslint": "^5.8.0",
-    "@types/node": "^8.10.25",
     "@types/mocha": "^2.2.42",
-    "mocha": "^2.2.42",
-    "ts-sinon": "1.0.12"
+    "@types/node": "^8.10.25",
+    "@types/sqlite3": "^3.1.7",
+    "@types/vscode": "^1.33.0",
+    "mocha": "^9.1.3",
+    "ts-sinon": "1.0.12",
+    "tslint": "^5.20.1",
+    "typescript": "^4.4.4",
+    "vscode-test": "^1.3.0"
   },
   "dependencies": {
-    "csv-parse": "4.8.8",
     "child-exec": "1.0.0",
     "fast-deep-equal": "2.0.1",
     "jsonc-parser": "1.0.0",
+    "sqlite": "^4.0.23",
+    "sqlite3-offline": "github:shihuihzh/sqlite3-offline#master",
     "vscode-cpptools": "^3.0.1",
     "vscode-jsonrpc": "^3.0.0",
     "xml-js": "1.6.8"
