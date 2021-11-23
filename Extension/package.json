@@ -359,6 +359,7 @@
     "test": "npm run compile && node ./out/test/runTests.js"
   },
   "devDependencies": {
+    "@types/common-tags": "^1.8.1",
     "@types/mocha": "^2.2.42",
     "@types/node": "^8.10.25",
     "@types/sqlite3": "^3.1.7",
@@ -371,6 +372,7 @@
   },
   "dependencies": {
     "child-exec": "1.0.0",
+    "common-tags": "^1.8.2",
     "fast-deep-equal": "2.0.1",
     "jsonc-parser": "1.0.0",
     "sqlite": "^4.0.23",
