@@ -10,9 +10,9 @@ import { Workbench } from "../../../iar/tools/workbench";
 export namespace CStatTaskProvider {
     let taskProvider: Vscode.Disposable | undefined = undefined;
 
-    export function register(context: Vscode.ExtensionContext) {
+    export function register() {
         if (!taskProvider) {
-            taskProvider = Vscode.tasks.registerTaskProvider("iar-cstat", new CStatProvider(context));
+            taskProvider = Vscode.tasks.registerTaskProvider("iar-cstat", new CStatProvider());
         }
     }
 
@@ -36,16 +36,15 @@ export interface CStatTaskDefinition {
 class CStatProvider implements Vscode.TaskProvider {
     // shared by all cstat tasks
     private diagnosticsCollection: Vscode.DiagnosticCollection;
-    private extensionRootPath: string;
 
-    constructor(context: Vscode.ExtensionContext) {
+    constructor() {
         this.diagnosticsCollection = Vscode.languages.createDiagnosticCollection("C-STAT");
-        this.extensionRootPath = context.extensionPath;
     }
 
     provideTasks(): Vscode.ProviderResult<Vscode.Task[]> {
         const tasks: Vscode.Task[] = [];
         if (OsUtils.OsType.Windows !== OsUtils.detectOsType()) {
+            Vscode.window.showErrorMessage("IAR: C-STAT tasks can only be run on Windows.");
             return []; // We can only perform cstat tasks on Windows
         }
         const taskVariants: Array<[string, "run" | "clear"]> =
@@ -102,7 +101,7 @@ class CStatProvider implements Vscode.TaskProvider {
 
     private executionFromDefinition(definition: CStatTaskDefinition): Vscode.CustomExecution {
         return new Vscode.CustomExecution(async () => {
-            return new CStatTaskExecution(this.extensionRootPath, this.diagnosticsCollection, definition);
+            return new CStatTaskExecution(this.diagnosticsCollection, definition);
         });
     }
 

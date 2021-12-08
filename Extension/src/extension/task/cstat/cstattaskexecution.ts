@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import * as Vscode from "vscode";
+import * as vscode from "vscode";
 import { CStatTaskDefinition } from "./cstattaskprovider";
 import { OsUtils, CommandUtils } from "../../../utils/utils";
 import { CStat } from "../../../iar/tools/cstat";
@@ -12,17 +12,17 @@ import { CStat } from "../../../iar/tools/cstat";
  * The Pseudoterminal is needed for custom task executions, and based on the official example:
  * https://github.com/microsoft/Vscode-extension-samples/blob/master/task-provider-sample/src/customTaskProvider.ts
  */
-export class CStatTaskExecution implements Vscode.Pseudoterminal {
-    private writeEmitter = new Vscode.EventEmitter<string>();
-	onDidWrite: Vscode.Event<string> = this.writeEmitter.event;
-	private closeEmitter = new Vscode.EventEmitter<void>();
-	onDidClose?: Vscode.Event<void> = this.closeEmitter.event;
+export class CStatTaskExecution implements vscode.Pseudoterminal {
+    private writeEmitter = new vscode.EventEmitter<string>();
+    onDidWrite: vscode.Event<string> = this.writeEmitter.event;
+    private closeEmitter = new vscode.EventEmitter<void>();
+    onDidClose?: vscode.Event<void> = this.closeEmitter.event;
 
-    onDidOverrideDimensions?: Vscode.Event<Vscode.TerminalDimensions | undefined> | undefined;
+    onDidOverrideDimensions?: vscode.Event<vscode.TerminalDimensions | undefined> | undefined;
 
     private definition: CStatTaskDefinition;
 
-    constructor(private extensionPath: string, private diagnostics: Vscode.DiagnosticCollection, definition: CStatTaskDefinition) {
+    constructor(private diagnostics: vscode.DiagnosticCollection, definition: CStatTaskDefinition) {
         // substitute command variables
         const resolvedDef: any = definition;
         for (const property in resolvedDef) {
@@ -31,9 +31,9 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
             }
         }
         this.definition = resolvedDef;
-	}
+    }
 
-    open(_initialDimensions: Vscode.TerminalDimensions | undefined): void {
+    open(_initialDimensions: vscode.TerminalDimensions | undefined): void {
         if (!this.definition.builder || !this.definition.project || !this.definition.config) {
             this.writeEmitter.fire("Error: Make sure you select a workbench, project and configuration before running this task.");
             this.closeEmitter.fire(undefined);
@@ -54,7 +54,7 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
      */
     private generateDiagnostics(): Thenable<void> {
         if (OsUtils.detectOsType() !== OsUtils.OsType.Windows) {
-            Vscode.window.showErrorMessage("C-STAT is only available on windows, sorry!");
+            vscode.window.showErrorMessage("IAR: C-STAT tasks can only be run on Windows.");
             return Promise.reject();
         }
 
@@ -62,32 +62,36 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
         const configName = this.definition.config;
         const builderPath = this.definition.builder;
 
+        const doFilterSuppressions = vscode.workspace.getConfiguration("iarvsc").get<boolean>("c-StatFilterSuppressions");
+
         this.writeEmitter.fire("Running C-STAT...\r\n");
 
         const analysis = CStat.runAnalysis(builderPath, projectPath, configName, (msg) => this.writeEmitter.fire(msg));
         return analysis.then(() => {
-            return CStat.getAllWarnings(projectPath, configName, this.extensionPath).then(warnings => {
+            return CStat.getAllWarnings(projectPath, configName, doFilterSuppressions === undefined ? true : doFilterSuppressions).then(warnings => {
                 this.writeEmitter.fire("Analyzing output...\r\n");
                 this.diagnostics.clear();
 
-                const filterString = Vscode.workspace.getConfiguration("iarvsc").get<string>("c-StatFilterLevel");
-                const filterLevel = filterString ? 
-                                        CStat.SeverityStringToSeverityEnum(filterString)
-                                        : CStat.CStatWarningSeverity.LOW;
+                const filterString = vscode.workspace.getConfiguration("iarvsc").get<string>("c-StatFilterLevel");
+                const filterLevel = filterString ?
+                    CStat.SeverityStringToSeverityEnum(filterString)
+                    : CStat.CStatWarningSeverity.LOW;
                 warnings = warnings.filter(w => w.severity >= filterLevel);
                 this.writeEmitter.fire("After filtering, " + warnings.length + " warning(s) remain.\r\n");
 
-                let fileDiagnostics: [Vscode.Uri, Vscode.Diagnostic[]][] = [];
+                let fileDiagnostics: [vscode.Uri, vscode.Diagnostic[]][] = [];
                 warnings.forEach(warning => {
                     const diagnostic = CStatTaskExecution.warningToDiagnostic(warning);
-                    fileDiagnostics.push([Vscode.Uri.file(warning.file), [diagnostic]]);
+                    const fileUri = vscode.Uri.file(warning.file);
+
+                    console.info(`Diagnostic: ${fileUri.toString()} -> ${warning.checkId}:${warning.line}:${warning.col}:${warning.message}\r\n`);
+                    fileDiagnostics.push([fileUri, [diagnostic]]);
                 });
 
                 this.diagnostics.set(fileDiagnostics);
                 this.writeEmitter.fire("C-STAT is done!\r\n");
                 this.closeEmitter.fire(undefined);
             }, this.onError.bind(this)); /* getAllWarnings.then */
-
         }, this.onError.bind(this)); /* analysis.then */
     }
 
@@ -105,21 +109,21 @@ export class CStatTaskExecution implements Vscode.Pseudoterminal {
         this.closeEmitter.fire(undefined);
     }
 
-    private static warningToDiagnostic(warning: CStat.CStatWarning): Vscode.Diagnostic {
+    private static warningToDiagnostic(warning: CStat.CStatWarning): vscode.Diagnostic {
         // VS Code uses zero-based lines/cols, C-STAT is one-based, so we need to correct for this.
         // Also, C-STAT seems to use (0,0) for msgs without a position, so we need to make sure
         // not to put these at (-1,-1) in VS Code (it doesn't like that).
         if (warning.line === 0) { warning.line = 1; }
         if (warning.col === 0) { warning.col = 1; }
-        const pos = new Vscode.Position(warning.line - 1, warning.col - 1);
-        const range = new Vscode.Range(pos, pos);
+        const pos = new vscode.Position(warning.line - 1, warning.col - 1);
+        const range = new vscode.Range(pos, pos);
 
-        let severity = Vscode.DiagnosticSeverity.Warning;
-        if (Vscode.workspace.getConfiguration("iarvsc").get<boolean>("c-StatDisplayLowSeverityWarningsAsHints")) {
-            if (warning.severity === CStat.CStatWarningSeverity.LOW) { severity = Vscode.DiagnosticSeverity.Hint; }
+        let severity = vscode.DiagnosticSeverity.Warning;
+        if (vscode.workspace.getConfiguration("iarvsc").get<boolean>("c-StatDisplayLowSeverityWarningsAsHints")) {
+            if (warning.severity === CStat.CStatWarningSeverity.LOW) { severity = vscode.DiagnosticSeverity.Hint; }
         }
 
-        const diagnostic = new Vscode.Diagnostic(range, warning.message, severity);
+        const diagnostic = new vscode.Diagnostic(range, warning.message, severity);
         diagnostic.source = warning.checkId;
         return diagnostic;
     }

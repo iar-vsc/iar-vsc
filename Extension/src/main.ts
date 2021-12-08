@@ -30,7 +30,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     IarConfigurationProvider.init();
     IarTaskProvider.register();
-    CStatTaskProvider.register(context);
+    CStatTaskProvider.register();
+
+    vscode.window.showInformationMessage("Successfully loaded & registered IAR extension. 🎉");
 }
 
 export function deactivate() {
