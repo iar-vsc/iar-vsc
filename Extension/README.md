@@ -1,5 +1,7 @@
 # iar-vsc README
 
+**Note: This extension is deprecated in favor of [`IAR Build`](https://marketplace.visualstudio.com/items?itemName=iarsystems.iar-build) and [`IAR C-SPY Debug`](https://marketplace.visualstudio.com/items?itemName=iarsystems.iar-debug)**
+
 This plugin makes it possible to combine the IAR Systems compiler solutions with Visual Studio Code. The goal is to support all IAR Systems compiler variants like for example Arm, RISC-V, MSP430, AVR, STM8, 8051, Renesas RX, RL78 and RH850. If you find any problems with this plugin, please open an issue on GitHub and include the compiler and version used. If possible, include also the project file (.ewp). This plugin works on any operating system supported by VS Code and IAR Systems. IAR Systems has contributed to the development of this plugin.
 
 The plugin can parse *ewp* files and convert them to a valid `c_cpp_properties.json` configuration which is used by the *cpptools* extension made by *Microsoft*.
