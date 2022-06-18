@@ -5,6 +5,13 @@
 Release Notes
 =============
 
+1.3.1
+-----
+* Deprecate extension in favor of `IAR Build`_ and `IAR C-SPY Debug`_.
+
+.. _IAR Build: https://marketplace.visualstudio.com/items?itemName=iarsystems.iar-build
+.. _IAR C-SPY Debug: https://marketplace.visualstudio.com/items?itemName=iarsystems.iar-debug
+
 1.3.0
 -----
 
