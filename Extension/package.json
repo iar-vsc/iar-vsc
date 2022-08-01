@@ -191,6 +191,11 @@
           "type": "array",
           "markdownDescription": "Extra command line arguments to supply to IarBuild.exe.",
           "default": []
+        },
+        "iarvsc.excludeProjectFolders": {
+          "type": "array",
+          "markdownDescription": "Folders in which project files will not be searched.",
+          "default": []
         }
       }
     },

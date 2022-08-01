@@ -57,7 +57,7 @@ class EwpFile implements Project {
 
     /**
      * Reload the project file.
-     * 
+     *
      * \returns {undefined} On success.
      * \returns {any} When an error occured.
      */
@@ -102,7 +102,7 @@ class EwpFile implements Project {
 
     /**
      * Load the xml file. The `path` property should already be initialized!
-     * 
+     *
      * We do not assing the result to `xml` directly because we have to disable
      * the lint check. We have to initialize `xml` in the constructor but we
      * like to create a helper function so we can reuse this code when reloading
@@ -152,8 +152,9 @@ export namespace Project {
         }
     }
 
-    export function createProjectsFrom(directory: Fs.PathLike, recursive: boolean = true): Project[] {
-        let projectPaths = findProjectFilesIn(directory, recursive);
+    export function createProjectsFrom(directory: Fs.PathLike, excludeFolders: Array<string> = [], recursive: boolean = true): Project[] {
+        excludeFolders = excludeFolders.map(x => Path.resolve(x));
+        let projectPaths = findProjectFilesIn(directory, excludeFolders, recursive);
 
         let projects = new Array<Project>();
 
@@ -168,9 +169,16 @@ export namespace Project {
         return projects;
     }
 
-    function findProjectFilesIn(directory: Fs.PathLike, recursive: boolean = true): Fs.PathLike[] {
+    function findProjectFilesIn(directory: Fs.PathLike, excludeFolders: Array<string> = [], recursive: boolean = true): Fs.PathLike[] {
         return FsUtils.walkAndFind(directory, recursive, (path): boolean => {
             let stat = Fs.statSync(path);
+
+            for (let i = 0; i < excludeFolders.length; ++i) {
+                let relative = Path.relative(excludeFolders[i], path.toString());
+                if (!relative || !relative.startsWith('..') || Path.isAbsolute(relative)) {
+                    return false;
+                }
+            }
 
             if (stat.isFile()) {
                 let extension = Path.parse(path.toString()).ext;
