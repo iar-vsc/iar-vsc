@@ -366,7 +366,7 @@
   },
   "dependencies": {
     "child-exec": "1.0.0",
-    "csv-parse": "4.8.8",
+    "csv-parse": "7.0.2",
     "fast-deep-equal": "2.0.1",
     "jsonc-parser": "1.0.0",
     "vscode-cpptools": "^3.0.1",
